@@ -114,7 +114,7 @@ function renderTasks(tasks) {
         <textarea data-task-comment="${task.id}" placeholder="Ex: dispo 2h, besoin de matériel..." ${isSelected ? '' : 'disabled'}>${commentValue}</textarea>
         <div style="margin-top:8px; font-weight:700;">Liste des participants</div>
         <div class="muted" style="margin-top:8px;">
-          ${task.assigned && task.assigned.length ? task.assigned.map(a => `${a.first_name} ${a.last_name}${a.comment ? ' - ' + a.comment : ''}`).join('<br>') : 'Personne inscrit pour le moment'}
+          ${task.assigned && task.assigned.length ? task.assigned.map(a => `<strong>${a.first_name} ${a.last_name}</strong>${a.comment ? ' - ' + a.comment : ''}`).join('<br>') : 'Personne inscrit pour le moment'}
         </div>
       </div>
     `;
