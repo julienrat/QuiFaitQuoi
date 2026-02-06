@@ -1,4 +1,5 @@
-const apiBase = '/api/index.php';
+const basePath = window.location.pathname.replace(/\/public\/.*$/, '');
+const apiBase = new URL(`${basePath}/api/index.php`, window.location.origin).toString();
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token');
 
@@ -30,7 +31,7 @@ function saveLocal() {
 }
 
 async function api(action, method = 'GET', data = null, query = null) {
-  const url = new URL(apiBase, window.location.origin);
+  const url = new URL(apiBase);
   url.searchParams.set('action', action);
   if (query) {
     Object.entries(query).forEach(([k, v]) => url.searchParams.set(k, v));

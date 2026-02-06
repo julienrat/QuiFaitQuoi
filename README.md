@@ -16,15 +16,14 @@ Application web légère pour gérer des bénévoles lors d’un événement :
 
 ---
 
-## 2) Installation rapide (serveur local)
+## 2) Installation rapide (local)
 
 ```bash
-# 1) Lancer PHP en local
 php -S 127.0.0.1:8000 -t .
-
-# 2) Ouvrir l’admin
-http://127.0.0.1:8000/public/admin.html
 ```
+
+Accès :
+- Admin : `http://127.0.0.1:8000/public/admin.html`
 
 ---
 
@@ -76,39 +75,67 @@ curl -X POST http://127.0.0.1:8000/api/index.php?action=admin_setup \
 ```
 
 Ensuite, connectez-vous sur :
-
 ```
 http://127.0.0.1:8000/public/admin.html
 ```
 
 ---
 
-## 6) Déploiement sur un serveur PHP (Apache / Nginx)
+## 6) Déploiement sur serveur (Apache / Nginx)
 
-### Apache (exemple)
-- DocumentRoot vers le dossier du projet
-- Activer PHP et `pdo_pgsql`
-
-Exemple simplifié :
+### a) Arborescence recommandée
 
 ```
-/var/www/gestion-benevoles
+/var/www/QuiFaitQuoi
 ├── api
 ├── public
 ├── sql
 └── README.md
 ```
 
-URL admin :
+### b) Apache
+
+- DocumentRoot : `/var/www/QuiFaitQuoi`
+- PHP activé + extension `pdo_pgsql`
+
+Exemple de VirtualHost :
+
 ```
-https://votre-domaine/public/admin.html
+<VirtualHost *:80>
+    ServerName votre-domaine
+    DocumentRoot /var/www/QuiFaitQuoi
+    <Directory /var/www/QuiFaitQuoi>
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
 ```
 
-### Nginx (exemple)
-Assurez-vous que :
-- `root` pointe vers le dossier projet
-- `index` autorise `.html`
-- PHP-FPM est actif
+### c) Nginx + PHP-FPM
+
+```
+server {
+    listen 80;
+    server_name votre-domaine;
+    root /var/www/QuiFaitQuoi;
+    index index.php index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+}
+```
+
+### d) Sous-dossier (ex: `/QuiFaitQuoi`)
+
+Si l’application est servie dans un sous-dossier, aucun réglage côté code n’est nécessaire :
+les chemins API sont calculés automatiquement.
 
 ---
 
@@ -138,6 +165,7 @@ tache,date,total_attendu
 
 - **Dupliquer un événement** : copie l’événement et ses tâches
 - **Suppression** : disponible dans la fenêtre « Modifier l’événement »
+- **Thème** : un thème graphique est associé à chaque événement
 
 ---
 
@@ -147,6 +175,7 @@ tache,date,total_attendu
 - Les choix sont mémorisés en `localStorage`
 - Les commentaires par tâche sont possibles
 - Les bénévoles peuvent **récupérer leurs données** via leur numéro de téléphone
+- Export **ICS** des tâches sélectionnées vers l’agenda
 
 ---
 
@@ -162,13 +191,7 @@ La description d’événement supporte :
 
 ---
 
-## 10.1) Thème par événement
-
-Le thème (couleurs) est lié à chaque événement et affecte :
-- l’interface admin
-- la page bénévole
-
-Si vous mettez à jour une base existante :
+## 11) Migration thème (si base existante)
 
 ```sql
 alter table events add column if not exists theme text not null default 'sand';
@@ -176,7 +199,7 @@ alter table events add column if not exists theme text not null default 'sand';
 
 ---
 
-## 11) Dépannage
+## 12) Dépannage
 
 ### Erreur : `could not find driver`
 Installez l’extension :
@@ -190,7 +213,7 @@ Vérifiez vos variables `PGUSER/PGPASSWORD`.
 
 ---
 
-## 12) Sécurité (recommandé en prod)
+## 13) Sécurité (recommandé en prod)
 
 - Protéger l’admin par HTTPS
 - Choisir un mot de passe admin fort
@@ -198,7 +221,4 @@ Vérifiez vos variables `PGUSER/PGPASSWORD`.
 
 ---
 
-Si tu veux, je peux ajouter :
-- Docker (PHP + Postgres)
-- Auth admin plus robuste
-- Exports CSV personnalisés
+Réalisé en partenariat avec une IA.

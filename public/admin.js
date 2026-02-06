@@ -1,4 +1,5 @@
-const apiBase = '/api/index.php';
+const basePath = window.location.pathname.replace(/\/public\/.*$/, '');
+const apiBase = new URL(`${basePath}/api/index.php`, window.location.origin).toString();
 
 const loginSection = document.getElementById('loginSection');
 const tabs = document.getElementById('tabs');
@@ -65,7 +66,7 @@ const manageMsg = document.getElementById('manageMsg');
 let manageTask = null;
 
 async function api(action, method = 'GET', data = null) {
-  const url = new URL(apiBase, window.location.origin);
+  const url = new URL(apiBase);
   url.searchParams.set('action', action);
   const options = { method, headers: { 'Content-Type': 'application/json' } };
   if (data) {
@@ -166,7 +167,7 @@ async function loadEvents() {
 function updateEventDisplay() {
   const ev = events.find((e) => e.id === currentEventId);
   if (!ev) return;
-  const link = `${window.location.origin}/public/volunteer.html?token=${ev.public_token}`;
+  const link = `${window.location.origin}${basePath}/public/volunteer.html?token=${ev.public_token}`;
   eventLink.value = link;
   if (adminTitle) {
     adminTitle.textContent = `Administration des bénévoles · ${ev.title}`;
@@ -256,7 +257,7 @@ async function saveTask() {
 
 async function refreshTasks() {
   if (!currentEventId) return;
-  const url = new URL(apiBase, window.location.origin);
+  const url = new URL(apiBase);
   url.searchParams.set('action', 'list_tasks_admin');
   url.searchParams.set('event_id', currentEventId);
   const listRes = await fetch(url.toString());
@@ -431,7 +432,7 @@ function renderDashboard(tasks) {
 
 async function refreshVolunteers() {
   if (!currentEventId) return;
-  const url = new URL(apiBase, window.location.origin);
+  const url = new URL(apiBase);
   url.searchParams.set('action', 'list_volunteers');
   url.searchParams.set('event_id', currentEventId);
   const res = await fetch(url.toString());
@@ -734,21 +735,21 @@ function bindEvents() {
   exportCsv.addEventListener('click', () => {
     if (!currentEventId) return;
     exportMsg.textContent = '';
-    const url = new URL(apiBase, window.location.origin);
+    const url = new URL(apiBase);
     url.searchParams.set('action', 'export_volunteers_csv');
     url.searchParams.set('event_id', currentEventId);
     window.location.href = url.toString();
   });
   exportTasksCsv.addEventListener('click', () => {
     if (!currentEventId) return;
-    const url = new URL(apiBase, window.location.origin);
+    const url = new URL(apiBase);
     url.searchParams.set('action', 'export_tasks_csv');
     url.searchParams.set('event_id', currentEventId);
     window.location.href = url.toString();
   });
   exportTasksCsvTab.addEventListener('click', () => {
     if (!currentEventId) return;
-    const url = new URL(apiBase, window.location.origin);
+    const url = new URL(apiBase);
     url.searchParams.set('action', 'export_tasks_csv');
     url.searchParams.set('event_id', currentEventId);
     window.location.href = url.toString();
