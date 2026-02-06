@@ -129,7 +129,9 @@ function renderTasks(tasks) {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
       const isFull = task.remaining <= 0;
-      if (isFull && !checked) {
+      if (isFull && checked) {
+        setMessage('taskMsg', 'Cette tâche est complète.', true);
+        e.target.checked = false;
         return;
       }
       if (!state.volunteer_id) {
@@ -293,6 +295,7 @@ async function saveTasks() {
       task_comments: state.task_comments,
     });
     setMessage('taskMsg', 'Choix enregistrés.');
+    await loadVolunteerFromServer();
     await loadTasks();
   } catch (e) {
     setMessage('taskMsg', e.message, true);
