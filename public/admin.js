@@ -107,7 +107,11 @@ async function checkAuth() {
     volunteerSection.hidden = false;
     logoutBtn.hidden = false;
     await loadEvents();
-    setActiveTab('dashboard');
+    setTabFromHash();
+    if (!location.hash) {
+      const savedTab = localStorage.getItem('gbv2_admin_tab') || 'dashboard';
+      setActiveTab(savedTab);
+    }
   } else {
     loginSection.hidden = false;
     tabs.hidden = true;
@@ -257,6 +261,7 @@ async function saveTask() {
     setTaskForm();
     await refreshTasks();
     closeTaskModal();
+    setActiveTab('tasks');
   } catch (e) {
     setMessage(taskModalMsg, e.message, true);
   }
@@ -393,7 +398,7 @@ function renderDashboard(tasks) {
       (task.assigned || []).forEach((a) => {
         entries.push({
           name: `${a.first_name} ${a.last_name}`,
-          comment: a.comment || 'Sans commentaire',
+          comment: a.comment || '',
           task: task.title,
           phone: a.phone || '',
         });
@@ -411,7 +416,7 @@ function renderDashboard(tasks) {
       div.innerHTML = `
         <div class="chat-name">${e.name}</div>
         <div class="chat-meta">${e.task}</div>
-        <div class="chat-comment">${e.comment}</div>
+        ${e.comment ? `<div class="chat-comment">${e.comment}</div>` : ''}
       `;
       dashboardChat.appendChild(div);
     });
@@ -501,6 +506,17 @@ function setActiveTab(tab) {
   document.querySelectorAll('[data-tab-panel]').forEach((panel) => {
     panel.hidden = panel.dataset.tabPanel !== tab;
   });
+  localStorage.setItem('gbv2_admin_tab', tab);
+  if (location.hash !== `#${tab}`) {
+    location.hash = tab;
+  }
+}
+
+function setTabFromHash() {
+  const hash = location.hash.replace('#', '');
+  if (hash === 'dashboard' || hash === 'tasks' || hash === 'volunteers') {
+    setActiveTab(hash);
+  }
 }
 
 function openVolunteerModal(vol) {
@@ -546,6 +562,7 @@ async function saveVolunteerModal() {
     await refreshVolunteers();
     await refreshTasks();
     closeVolunteerModal();
+    setActiveTab('volunteers');
   } catch (e) {
     modalMsg.textContent = e.message;
     modalMsg.style.color = '#a63d40';
@@ -690,6 +707,7 @@ async function saveManageAdd() {
     manageMsg.textContent = 'Ajouté.';
     await refreshTasks();
     closeManageModal();
+    setActiveTab('tasks');
   } catch (e) {
     manageMsg.textContent = e.message;
     manageMsg.style.color = '#a63d40';
@@ -789,6 +807,7 @@ function bindEvents() {
   document.querySelectorAll('[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
   });
+  window.addEventListener('hashchange', setTabFromHash);
   modalClose.addEventListener('click', closeVolunteerModal);
   modalSave.addEventListener('click', saveVolunteerModal);
   volModal.addEventListener('click', (e) => {
