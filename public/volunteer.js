@@ -1,5 +1,7 @@
 const basePath = window.location.pathname.replace(/\/public\/.*$/, '');
-const apiBase = new URL(`${basePath}/api/index.php`, window.location.origin).toString();
+const apiBase = window.location.origin === 'null'
+  ? `${basePath}/api/index.php`
+  : new URL(`${basePath}/api/index.php`, window.location.origin).toString();
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token');
 
@@ -13,6 +15,8 @@ let state = {
   task_ids: [],
   task_comments: {},
 };
+let currentEvent = null;
+let tasksCache = [];
 
 function loadLocal() {
   if (!storageKey) return;
@@ -161,6 +165,7 @@ async function loadEvent() {
   }
   const res = await api('get_event_public', 'GET', null, { token });
   const ev = res.event;
+  currentEvent = ev;
   document.body.setAttribute('data-theme', ev.theme || 'sand');
   document.getElementById('eventTitle').textContent = ev.title;
   const meta = [ev.location, ev.start_at ? new Date(ev.start_at).toLocaleString() : null]
@@ -187,6 +192,7 @@ async function loadVolunteerFromServer() {
 async function loadTasks() {
   if (!token) return;
   const res = await api('list_tasks_public', 'GET', null, { token });
+  tasksCache = res.tasks || [];
   renderTasks(res.tasks || []);
 }
 
@@ -305,6 +311,13 @@ async function init() {
 document.getElementById('saveProfile').addEventListener('click', saveProfile);
 document.getElementById('saveTasks').addEventListener('click', saveTasks);
 document.getElementById('lookupBtn').addEventListener('click', lookupByPhone);
+document.getElementById('addToCalendar').addEventListener('click', () => {
+  if (!currentEvent) {
+    setMessage('taskMsg', 'Événement non disponible.', true);
+    return;
+  }
+  downloadIcsForTasks(currentEvent, tasksCache, state.task_ids);
+});
 
 function escapeHtml(str) {
   return str
@@ -334,6 +347,84 @@ function renderMarkdown(text) {
     '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
   );
   return out;
+}
+
+function formatIcsDate(date) {
+  const d = new Date(date);
+  return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+}
+
+function sanitizeIcs(text) {
+  return String(text || '').replace(/\r?\n/g, '\\n');
+}
+
+function stripMarkdown(text) {
+  return String(text || '')
+    .replace(/^###\s+(.+)$/gm, '$1')
+    .replace(/^##\s+(.+)$/gm, '$1')
+    .replace(/^#\s+(.+)$/gm, '$1')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/^-\\s+/gm, '');
+}
+
+function downloadIcsForTasks(ev, tasks, selectedIds) {
+  const chosen = (tasks || []).filter((t) => selectedIds.includes(t.id));
+  if (!chosen.length) {
+    setMessage('taskMsg', 'Sélectionnez au moins une tâche.', true);
+    return;
+  }
+  const eol = '\r\n';
+  const url = sanitizeIcs(window.location.href);
+  const location = sanitizeIcs(ev.location || '');
+  const dtStamp = formatIcsDate(new Date());
+
+  const events = chosen
+    .filter((t) => t.start_at)
+    .map((t, idx) => {
+      const start = formatIcsDate(t.start_at);
+      const endDate = t.end_at ? new Date(t.end_at) : new Date(new Date(t.start_at).getTime() + 2 * 60 * 60 * 1000);
+      const end = formatIcsDate(endDate);
+      const uid = `${ev.id || 'event'}-${t.id || idx}-${Date.now()}@quifaitquoi`;
+      const title = sanitizeIcs(`${ev.title} — ${t.title}`);
+      const participants = (t.assigned || []).map((a) => `${a.first_name} ${a.last_name}`).join(', ');
+      const descParts = [];
+      const taskDesc = stripMarkdown(t.description || '');
+      if (taskDesc) descParts.push(taskDesc);
+      if (participants) descParts.push(`Participants: ${participants}`);
+      const desc = sanitizeIcs(descParts.join('\\n'));
+      return [
+        'BEGIN:VEVENT',
+        `UID:${uid}`,
+        `DTSTAMP:${dtStamp}`,
+        `DTSTART:${start}`,
+        `DTEND:${end}`,
+        `SUMMARY:${title}`,
+        `DESCRIPTION:${desc}`,
+        `LOCATION:${location}`,
+        `URL;VALUE=URI:${url}`,
+        'END:VEVENT',
+      ].join(eol);
+    });
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//QuiFaitQuoi//FR',
+    'CALSCALE:GREGORIAN',
+    ...events,
+    'END:VCALENDAR',
+  ].join(eol);
+
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(ev.title || 'evenement').replace(/\\s+/g, '_')}_taches.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
 }
 
 init();

@@ -1,5 +1,7 @@
 const basePath = window.location.pathname.replace(/\/public\/.*$/, '');
-const apiBase = new URL(`${basePath}/api/index.php`, window.location.origin).toString();
+const apiBase = window.location.origin === 'null'
+  ? `${basePath}/api/index.php`
+  : new URL(`${basePath}/api/index.php`, window.location.origin).toString();
 
 const loginSection = document.getElementById('loginSection');
 const tabs = document.getElementById('tabs');
@@ -98,7 +100,9 @@ async function checkAuth() {
     loginSection.hidden = true;
     tabs.hidden = false;
     dashboard.hidden = false;
-    eventSection.hidden = false;
+    if (eventSection) {
+      eventSection.hidden = false;
+    }
     taskSection.hidden = false;
     volunteerSection.hidden = false;
     logoutBtn.hidden = false;
@@ -108,7 +112,9 @@ async function checkAuth() {
     loginSection.hidden = false;
     tabs.hidden = true;
     dashboard.hidden = true;
-    eventSection.hidden = true;
+    if (eventSection) {
+      eventSection.hidden = true;
+    }
     taskSection.hidden = true;
     volunteerSection.hidden = true;
     logoutBtn.hidden = true;
@@ -133,7 +139,7 @@ async function logout() {
   await checkAuth();
 }
 
-async function loadEvents() {
+async function loadEvents(preferredId = null) {
   const res = await api('list_events');
   events = res.events || [];
   eventSelect.innerHTML = '';
@@ -156,8 +162,9 @@ async function loadEvents() {
   });
 
   const savedId = Number(localStorage.getItem('gbv2_admin_event') || 0);
+  const usePreferred = preferredId && events.some((e) => e.id === preferredId);
   const hasSaved = events.some((e) => e.id === savedId);
-  currentEventId = hasSaved ? savedId : events[0].id;
+  currentEventId = usePreferred ? preferredId : (hasSaved ? savedId : events[0].id);
   eventSelect.value = String(currentEventId);
   updateEventDisplay();
   await refreshTasks();
@@ -756,8 +763,11 @@ function bindEvents() {
   });
   duplicateEventBtn.addEventListener('click', async () => {
     if (!currentEventId) return;
-    await api('duplicate_event', 'POST', { id: currentEventId });
-    await loadEvents();
+    const res = await api('duplicate_event', 'POST', { id: currentEventId });
+    const newId = res.id;
+    await loadEvents(newId);
+    setEventForm(events.find((e) => e.id === newId) || null);
+    openEventModal(true);
   });
   importVolunteersCsv.addEventListener('change', async (e) => {
     const file = e.target.files[0];
