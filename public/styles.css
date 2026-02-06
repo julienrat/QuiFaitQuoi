@@ -442,6 +442,11 @@ button:disabled {
   background: #fff;
 }
 
+.highlight {
+  outline: 3px solid var(--accent);
+  transition: outline 0.3s ease;
+}
+
 .task-card {
   display: grid;
   grid-template-columns: 52px 1fr;

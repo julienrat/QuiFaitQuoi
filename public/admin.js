@@ -288,6 +288,7 @@ function renderTasks(tasks) {
   tasks.forEach((task) => {
     const card = document.createElement('div');
     card.className = 'card';
+    card.setAttribute('data-task-card', task.id);
     const assignedList = task.assigned && task.assigned.length
       ? task.assigned.map((a) => {
           const comment = a.comment ? ` - ${a.comment}` : '';
@@ -389,6 +390,17 @@ function renderDashboard(tasks) {
         </div>
       </div>
     `;
+    card.addEventListener('click', () => {
+      setActiveTab('tasks');
+      setTimeout(() => {
+        const taskCard = document.querySelector(`#taskList [data-task-card="${task.id}"]`);
+        if (taskCard) {
+          taskCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          taskCard.classList.add('highlight');
+          setTimeout(() => taskCard.classList.remove('highlight'), 1200);
+        }
+      }, 0);
+    });
     dashboardSummary.appendChild(card);
   });
 
