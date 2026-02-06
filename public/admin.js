@@ -396,12 +396,14 @@ function renderDashboard(tasks) {
     const entries = [];
     tasks.forEach((task) => {
       (task.assigned || []).forEach((a) => {
-        entries.push({
-          name: `${a.first_name} ${a.last_name}`,
-          comment: a.comment || '',
-          task: task.title,
-          phone: a.phone || '',
-        });
+        if (a.comment) {
+          entries.push({
+            name: `${a.first_name} ${a.last_name}`,
+            comment: a.comment,
+            task: task.title,
+            phone: a.phone || '',
+          });
+        }
       });
     });
     if (!entries.length) {
