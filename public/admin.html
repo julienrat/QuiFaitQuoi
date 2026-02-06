@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Administration bénévoles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1 id="adminTitle">Administration des bénévoles</h1>
+        <p>Créez vos événements, tâches et bénévoles. Le lien public est prêt à être partagé.</p>
+      </div>
+      <button id="logoutBtn" class="secondary" hidden>Se déconnecter</button>
+    </header>
+
+    <section id="loginSection">
+      <h2>Connexion admin</h2>
+      <div class="grid two">
+        <div>
+          <label>Identifiant</label>
+          <input id="loginUser" type="text" autocomplete="username" />
+        </div>
+        <div>
+          <label>Mot de passe</label>
+          <input id="loginPass" type="password" autocomplete="current-password" />
+        </div>
+      </div>
+      <div class="inline" style="margin-top:12px;">
+        <button id="loginBtn">Se connecter</button>
+        <span id="loginMsg" class="muted"></span>
+      </div>
+    </section>
+
+    <section id="tabs" hidden>
+      <div class="inline">
+        <button class="secondary" data-tab="dashboard">Événement</button>
+        <button class="secondary" data-tab="tasks">Tâches</button>
+        <button class="secondary" data-tab="volunteers">Bénévoles</button>
+      </div>
+    </section>
+
+    <section id="dashboard" data-tab-panel="dashboard" hidden>
+      <h2>Tableau de bord</h2>
+      <div class="event-card">
+        <div class="event-select">
+          <label for="eventSelect" class="muted">Événement sélectionné</label>
+          <select id="eventSelect"></select>
+        </div>
+        <div class="inline">
+          <button id="editEventModal" class="secondary">Modifier</button>
+          <button id="openEventModal" class="secondary">＋ Ajouter</button>
+          <button id="duplicateEvent" class="secondary">Dupliquer</button>
+          <button id="exportTasksCsv" class="secondary">Exporter CSV tâches</button>
+        </div>
+      </div>
+      <div class="grid two">
+        <div>
+          <label>Lien public</label>
+          <div class="inline">
+            <input id="eventLink" type="text" readonly />
+            <button id="copyLink" class="secondary">Copier</button>
+          </div>
+        </div>
+      </div>
+      <div id="dashboardSummary" class="dashboard-grid"></div>
+      <div>
+        <h3>Commentaires des bénévoles</h3>
+        <div class="chat-card">
+          <div id="dashboardChat" class="chat-list"></div>
+        </div>
+      </div>
+      <div>
+        <h3>Tableau des bénévoles</h3>
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Téléphone</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardVolunteerTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="eventSection" data-tab-panel="dashboard" hidden>
+      <h2>Événement</h2>
+      <div class="inline" style="margin-top:12px;">
+        <span id="eventMsg" class="muted"></span>
+      </div>
+    </section>
+
+    <section id="taskSection" data-tab-panel="tasks" hidden>
+      <h2>Tâches</h2>
+      <div class="toolbar">
+        <button id="openTaskModal" class="secondary">＋ Ajouter une tâche</button>
+        <div class="toolbar-actions">
+          <label class="secondary toolbar-file">
+            Importer CSV
+            <input id="importTasksCsv" type="file" accept=".csv" />
+          </label>
+          <button id="exportTasksCsvTab" class="secondary">Exporter CSV</button>
+        </div>
+        <span id="taskMsg" class="muted"></span>
+      </div>
+      <div id="taskList" class="card-list"></div>
+    </section>
+
+    <section id="volunteerSection" data-tab-panel="volunteers" hidden>
+      <h2>Gestion des bénévoles</h2>
+      <div class="toolbar">
+        <button id="openVolunteerModal" class="secondary">＋ Ajouter un bénévole</button>
+        <div class="toolbar-actions">
+          <label class="secondary toolbar-file">
+            Importer CSV
+            <input id="importVolunteersCsv" type="file" accept=".csv" />
+          </label>
+          <button id="exportCsv" class="secondary">Exporter CSV</button>
+        </div>
+        <span id="exportMsg" class="muted"></span>
+      </div>
+      <hr />
+      <div id="volunteerList" class="card-list"></div>
+    </section>
+  </main>
+
+  <div id="volModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h3 id="volModalTitle">Ajouter un bénévole</h3>
+      <p id="volModalName" class="muted"></p>
+      <div class="grid two">
+        <div>
+          <label>Prénom</label>
+          <input id="modalFirst" type="text" />
+        </div>
+        <div>
+          <label>Nom</label>
+          <input id="modalLast" type="text" />
+        </div>
+        <div>
+          <label>Email</label>
+          <input id="modalEmail" type="email" />
+        </div>
+        <div>
+          <label>Téléphone</label>
+          <input id="modalPhone" type="text" />
+        </div>
+      </div>
+      <div class="inline" style="margin-top:12px;">
+        <button id="modalSave">Enregistrer</button>
+        <button id="modalClose" class="secondary">Fermer</button>
+        <span id="modalMsg" class="muted"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="manageModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h3>Gérer les bénévoles de la tâche</h3>
+      <p id="manageTaskName" class="muted"></p>
+      <div id="manageList" class="card-list" style="margin-top:10px;"></div>
+      <hr />
+      <div class="grid two">
+        <div>
+          <label>Ajouter un bénévole</label>
+          <select id="manageVolunteer"></select>
+        </div>
+        <div>
+          <label>Commentaire</label>
+          <input id="manageComment" type="text" placeholder="Ex: dispo 2h" />
+        </div>
+      </div>
+      <div class="inline" style="margin-top:12px;">
+        <button id="manageAdd">Ajouter</button>
+        <button id="manageClose" class="secondary">Fermer</button>
+        <span id="manageMsg" class="muted"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="taskModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h3 id="taskModalTitle">Ajouter une tâche</h3>
+      <div class="grid two">
+        <div>
+          <label>Titre</label>
+          <input id="taskTitle" type="text" />
+        </div>
+        <div>
+          <label>Nombre de bénévoles</label>
+          <input id="taskExpected" type="number" min="1" value="1" />
+        </div>
+        <div>
+          <label>Début</label>
+          <input id="taskStart" type="datetime-local" />
+        </div>
+        <div>
+          <label>Fin</label>
+          <input id="taskEnd" type="datetime-local" />
+        </div>
+      </div>
+      <label>Description</label>
+      <textarea id="taskDesc"></textarea>
+      <div class="inline" style="margin-top:12px;">
+        <button id="saveTask">Enregistrer</button>
+        <button id="cancelTask" class="secondary">Fermer</button>
+        <span id="taskModalMsg" class="muted"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="eventModal" class="modal" aria-hidden="true">
+    <div class="modal-card theme-preview" id="eventThemePreview">
+      <h3 id="eventModalTitle">Ajouter un événement</h3>
+      <div class="grid two">
+        <div>
+          <label>Titre</label>
+          <input id="eventTitle" type="text" />
+        </div>
+        <div>
+          <label>Lieu</label>
+          <input id="eventLocation" type="text" />
+        </div>
+        <div>
+          <label>Thème</label>
+          <select id="eventTheme">
+            <option value="sand">Sable doux</option>
+            <option value="sage">Sauge</option>
+            <option value="slate">Ardoise claire</option>
+            <option value="sunset">Soleil couchant</option>
+            <option value="ocean">Océan</option>
+            <option value="forest">Forêt</option>
+            <option value="berry">Baie</option>
+            <option value="clay">Argile</option>
+          </select>
+        </div>
+        <div>
+          <label>Début</label>
+          <input id="eventStart" type="datetime-local" />
+        </div>
+        <div>
+          <label>Fin</label>
+          <input id="eventEnd" type="datetime-local" />
+        </div>
+      </div>
+      <label>Description</label>
+      <textarea id="eventDesc"></textarea>
+      <div class="inline" style="margin-top:12px;">
+        <button id="saveEvent">Enregistrer</button>
+        <button id="deleteEvent" class="danger">Supprimer</button>
+        <button id="cancelEvent" class="secondary">Fermer</button>
+        <span id="eventModalMsg" class="muted"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

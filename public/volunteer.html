@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inscription bénévoles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1 id="eventTitle">Chargement...</h1>
+        <p id="eventMeta" class="muted"></p>
+        <p id="eventDesc" class="muted"></p>
+      </div>
+      <span class="badge" id="eventBadge">Lien bénévole</span>
+    </header>
+
+    <section>
+      <h2>Importer mes données avec mon numéro de tel</h2>
+      <div class="inline">
+        <input id="lookupPhone" type="text" placeholder="05.12.34.56.78" />
+        <button id="lookupBtn" class="secondary">Importer mes données</button>
+        <span id="lookupMsg" class="muted"></span>
+      </div>
+      <hr />
+      <h2>Vos coordonnées</h2>
+      <div class="grid two">
+        <div>
+          <label>Prénom</label>
+          <input id="firstName" type="text" />
+        </div>
+        <div>
+          <label>Nom</label>
+          <input id="lastName" type="text" />
+        </div>
+        <div>
+          <label>Email</label>
+          <input id="email" type="email" />
+        </div>
+        <div>
+          <label>Téléphone</label>
+          <input id="phone" type="text" />
+        </div>
+      </div>
+      <div class="inline" style="margin-top:12px;">
+        <button id="saveProfile">Enregistrer mes infos</button>
+        <span id="profileMsg" class="muted"></span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Choisir une ou plusieurs tâches</h2>
+      <p>Cliquer sur une carte pour vous inscrire. Vous pouvez modifier vos choix en revenant plus tard.</p>
+      <div id="taskGrid" class="card-list"></div>
+      <div class="inline" style="margin-top:12px;">
+        <button id="saveTasks">Mettre à jour mes tâches</button>
+        <span id="taskMsg" class="muted"></span>
+      </div>
+    </section>
+  </main>
+
+  <script src="volunteer.js"></script>
+</body>
+</html>
