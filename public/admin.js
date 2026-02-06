@@ -171,8 +171,8 @@ async function loadEvents(preferredId = null) {
   currentEventId = usePreferred ? preferredId : (hasSaved ? savedId : events[0].id);
   eventSelect.value = String(currentEventId);
   updateEventDisplay();
-  await refreshTasks();
   await refreshVolunteers();
+  await refreshTasks();
 }
 
 function updateEventDisplay() {
@@ -426,20 +426,21 @@ function renderDashboard(tasks) {
       dashboardChat.appendChild(div);
     });
     dashboardChat.scrollTop = dashboardChat.scrollHeight;
-    if (dashboardVolunteerTable) {
-      const unique = new Map();
-      entries.forEach((e) => {
-        if (!unique.has(e.name)) {
-          unique.set(e.name, e.phone || '-');
-        }
-      });
-      Array.from(unique.entries())
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .forEach(([name, phone]) => {
+  }
+
+  if (dashboardVolunteerTable) {
+    const vols = Array.from(volunteersMap.values());
+    if (!vols.length) {
+      dashboardVolunteerTable.innerHTML = '<tr><td colspan="2" class="muted">Aucun bénévole inscrit.</td></tr>';
+    } else {
+      dashboardVolunteerTable.innerHTML = '';
+      vols
+        .sort((a, b) => `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`))
+        .forEach((v) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${name}</td>
-            <td>${phone}</td>
+            <td>${v.first_name} ${v.last_name}</td>
+            <td>${v.phone || '-'}</td>
           `;
           dashboardVolunteerTable.appendChild(tr);
         });
@@ -755,8 +756,8 @@ function bindEvents() {
     currentEventId = Number(eventSelect.value || 0);
     localStorage.setItem('gbv2_admin_event', String(currentEventId));
     updateEventDisplay();
-    await refreshTasks();
     await refreshVolunteers();
+    await refreshTasks();
   });
   openTaskModalBtn.addEventListener('click', () => {
     editingTaskId = null;

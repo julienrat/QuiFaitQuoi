@@ -195,7 +195,7 @@ try {
             $tasks = $stmt->fetchAll();
 
             $assignStmt = $pdo->prepare(
-                'select ta.task_id, ta.comment, v.id as volunteer_id, v.first_name, v.last_name, v.email, v.phone
+                'select ta.task_id, ta.comment, ta.created_at, v.id as volunteer_id, v.first_name, v.last_name, v.email, v.phone
                  from task_assignments ta
                  join volunteers v on v.id = ta.volunteer_id
                  where v.event_id = :e
@@ -217,6 +217,7 @@ try {
                     'email' => $a['email'],
                     'phone' => $a['phone'],
                     'comment' => $a['comment'] ?? '',
+                    'created_at' => $a['created_at'] ?? null,
                 ];
             }
 
@@ -418,7 +419,7 @@ try {
             }
 
             $tasksStmt = $pdo->prepare(
-                'select id, title, start_at, expected_volunteers
+                'select id, title, description, start_at, end_at, expected_volunteers
                  from tasks
                  where event_id = :e
                  order by start_at asc'
@@ -458,13 +459,15 @@ try {
             header('Content-Disposition: attachment; filename="' . $filename . '"');
 
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['tache', 'date', 'inscrits', 'total_attendu', 'liste_benevoles']);
+            fputcsv($out, ['tache', 'description', 'debut', 'fin', 'inscrits', 'total_attendu', 'liste_benevoles']);
             foreach ($tasks as $t) {
                 $tid = (int)$t['id'];
                 $list = $byTask[$tid] ?? [];
                 fputcsv($out, [
                     $t['title'],
+                    $t['description'],
                     $t['start_at'],
+                    $t['end_at'],
                     count($list),
                     $t['expected_volunteers'],
                     implode(' | ', $list),
@@ -574,13 +577,34 @@ try {
                 }
                 $email = $map['email'] ?? null;
                 $phone = $map['telephone'] ?? ($map['téléphone'] ?? null);
+                $emailValue = $email !== null ? trim((string)($row[$email] ?? '')) : '';
                 $phoneValue = $phone !== null ? normalize_phone($row[$phone] ?? null) : null;
+
+                if ($emailValue !== '') {
+                    $exists = $pdo->prepare('select 1 from volunteers where event_id = :e and email = :m');
+                    $exists->execute([':e' => $eventId, ':m' => $emailValue]);
+                    if ($exists->fetch()) {
+                        continue;
+                    }
+                } elseif ($phoneValue !== null && $phoneValue !== '') {
+                    $exists = $pdo->prepare('select 1 from volunteers where event_id = :e and phone = :p');
+                    $exists->execute([':e' => $eventId, ':p' => $phoneValue]);
+                    if ($exists->fetch()) {
+                        continue;
+                    }
+                } else {
+                    $exists = $pdo->prepare('select 1 from volunteers where event_id = :e and lower(first_name) = lower(:f) and lower(last_name) = lower(:l)');
+                    $exists->execute([':e' => $eventId, ':f' => trim($first), ':l' => trim($last)]);
+                    if ($exists->fetch()) {
+                        continue;
+                    }
+                }
                 $stmt = $pdo->prepare('insert into volunteers (event_id, first_name, last_name, email, phone) values (:e, :f, :l, :m, :p)');
                 $stmt->execute([
                     ':e' => $eventId,
                     ':f' => trim($first),
                     ':l' => trim($last),
-                    ':m' => $email !== null ? ($row[$email] ?? null) : null,
+                    ':m' => $emailValue !== '' ? $emailValue : null,
                     ':p' => $phoneValue,
                 ]);
             }
@@ -604,7 +628,7 @@ try {
             }
             $headers = str_getcsv(array_shift($lines));
             $map = array_flip(array_map('strtolower', $headers));
-            $required = ['tache', 'date', 'total_attendu'];
+            $required = ['tache', 'debut', 'total_attendu'];
             foreach ($required as $r) {
                 if (!isset($map[$r])) {
                     json_response(['error' => 'missing_columns'], 400);
@@ -616,19 +640,28 @@ try {
                 }
                 $row = str_getcsv($line);
                 $title = $row[$map['tache']] ?? '';
-                $date = $row[$map['date']] ?? '';
+                $date = $row[$map['debut']] ?? '';
                 $expected = (int)($row[$map['total_attendu']] ?? 1);
                 if (trim($title) === '' || trim($date) === '') {
                     continue;
                 }
+                $desc = $map['description'] ?? null;
+                $end = $map['fin'] ?? null;
+                $exists = $pdo->prepare('select 1 from tasks where event_id = :e and title = :t and start_at = :s');
+                $exists->execute([':e' => $eventId, ':t' => trim($title), ':s' => $date]);
+                if ($exists->fetch()) {
+                    continue;
+                }
                 $stmt = $pdo->prepare(
-                    'insert into tasks (event_id, title, start_at, expected_volunteers)
-                     values (:e, :t, :s, :ex)'
+                    'insert into tasks (event_id, title, description, start_at, end_at, expected_volunteers)
+                     values (:e, :t, :d, :s, :en, :ex)'
                 );
                 $stmt->execute([
                     ':e' => $eventId,
                     ':t' => trim($title),
+                    ':d' => $desc !== null ? ($row[$desc] ?? null) : null,
                     ':s' => $date,
+                    ':en' => $end !== null ? ($row[$end] ?? null) : null,
                     ':ex' => $expected > 0 ? $expected : 1,
                 ]);
             }
