@@ -402,6 +402,7 @@ function renderDashboard(tasks) {
             comment: a.comment,
             task: task.title,
             phone: a.phone || '',
+            created_at: a.created_at || '',
           });
         }
       });
@@ -413,7 +414,9 @@ function renderDashboard(tasks) {
       }
       return;
     }
-    entries.forEach((e) => {
+    entries
+      .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+      .forEach((e) => {
       const div = document.createElement('div');
       div.innerHTML = `
         <div class="chat-name">${e.name}</div>
@@ -422,6 +425,7 @@ function renderDashboard(tasks) {
       `;
       dashboardChat.appendChild(div);
     });
+    dashboardChat.scrollTop = dashboardChat.scrollHeight;
     if (dashboardVolunteerTable) {
       const unique = new Map();
       entries.forEach((e) => {
