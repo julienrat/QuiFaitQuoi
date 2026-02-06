@@ -318,7 +318,7 @@ button:disabled {
 .dashboard-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
   grid-auto-flow: column;
   grid-template-rows: repeat(2, minmax(0, auto));
   grid-auto-columns: minmax(240px, 1fr);
