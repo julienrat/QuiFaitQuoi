@@ -82,7 +82,6 @@ function renderTasks(tasks) {
 
   tasks.forEach((task) => {
     const isSelected = state.task_ids.includes(task.id);
-    const isFull = task.remaining <= 0 && !isSelected;
     const alreadyAssigned = state.volunteer_id
       ? (task.assigned || []).some((a) => a.volunteer_id === state.volunteer_id)
       : false;
@@ -92,6 +91,7 @@ function renderTasks(tasks) {
       if (!isSelected && alreadyAssigned) delta = 1;
     }
     const displayRemaining = Math.max(task.remaining + delta, 0);
+    const isFull = displayRemaining <= 0 && !isSelected;
     const card = document.createElement('div');
     card.className = 'card task-card';
     card.style.borderColor = isSelected ? '#d66b2f' : '#e3d9cc';
@@ -128,8 +128,17 @@ function renderTasks(tasks) {
       const checked = e.target.checked;
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
-      const isFull = task.remaining <= 0;
-      if (isFull && checked) {
+      const isSelected = state.task_ids.includes(taskId);
+      const alreadyAssigned = state.volunteer_id
+        ? (task.assigned || []).some((a) => a.volunteer_id === state.volunteer_id)
+        : false;
+      let delta = 0;
+      if (state.volunteer_id) {
+        if (isSelected && !alreadyAssigned) delta = -1;
+        if (!isSelected && alreadyAssigned) delta = 1;
+      }
+      const displayRemaining = Math.max(task.remaining + delta, 0);
+      if (displayRemaining <= 0 && checked) {
         setMessage('taskMsg', 'Cette tâche est complète.', true);
         e.target.checked = false;
         return;
